@@ -10,7 +10,7 @@ import Helpers
 import Test.Framework (defaultMain)
 import           Test.Framework                     (Test, testGroup)
 import           Test.Framework.Providers.HUnit     (testCase)
-import           Test.HUnit                         ((@=?))
+import           Test.HUnit                         ((@=?), assertBool, assertFailure)
 
 
 
@@ -56,5 +56,9 @@ testHandleGeneric = testGroup "test_handle_generic"
       assert_in_delta time, time2, 0.000001
       -}
     , simpleComparisonCase "7" (fmt "%F %T%Q") "2012-01-03 01:00:00.234567"
+
+    , testCase "8" $ case(parserUnderTest "1/1/32.1") of
+        Right _ -> assertFailure "unexpectedly parsed"
+        _       -> assertBool "" True
     ]
 

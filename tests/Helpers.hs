@@ -36,3 +36,6 @@ fmt = Format
 
 parserUnderTest :: String -> Either String DT.UTCTime
 parserUnderTest x = Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
+
+parserUnderTestM :: (MonadChronic m) => String -> m (Either String DT.UTCTime)
+parserUnderTestM x = return $ Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
