@@ -11,12 +11,30 @@ import Test.Framework (defaultMain)
 import           Test.Framework                     (Test, testGroup)
 import           Test.Framework.Providers.HUnit     (testCase)
 import           Test.HUnit                         ((@=?), assertBool, assertFailure)
+import qualified Data.Time as DT
 
 
 
 simpleComparisonCase name format time = testCase name $
   Right (timeLiteral format time) @=? parserUnderTest time
 
+
+data ActualTime = ActualTime { unActualTime :: DT.UTCTime }
+actualTime = ActualTime
+
+data TestTime  = TestTime { unTestTime :: String }
+testTime = TestTime
+
+data ParserOptions = ParserOptions { unParserOptions :: [ChronicOptions -> ChronicOptions] }
+parserOptions = ParserOptions
+
+data CurrentTime = CurrentTime { unCurrentTime :: DT.UTCTime }
+currentTime = CurrentTime
+
+monadicComaprisonCase name actual time now opts =
+  testCase name $ 
+        Right (unActualTime actual) @=?
+        runChronicTest (unCurrentTime now) (parserUnderTestMOpts (unParserOptions opts) (unTestTime time))
 
 main :: IO ()
 main = defaultMain
@@ -66,5 +84,16 @@ testHandleGeneric = testGroup "test_handle_generic"
         Right (timeLiteral (fmt "%F") "2014-03-28") @=?
         runChronicTest now (parserUnderTestMOpts [guess Begin] "28th")
       ) $ timeLiteral (fmt "%F") "2014-03-10"
+
+    , monadicComaprisonCase "10"
+          (actualTime (timeLiteral (fmt "%F") "2014-03-28"))
+          (testTime   "28th")
+          (currentTime (timeLiteral (fmt "%F") "2014-03-10"))
+          (parserOptions [])
     ]
 
+{-
+testHandleRmnSd :: Test
+testHandleRmnSd = testGroup "test_handle_rmnd_sd"
+    [ testCase "0
+-}
