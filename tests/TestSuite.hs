@@ -238,14 +238,16 @@ testHandleRmnOd = testGroup "test_handle_rmnd_od"
         (parserOptions [ambiguousTimeRange Nothing])
     ]
 
+testHandleOdRm :: Test
+testHandleRmnOd = testGroup "test_handle_od_rm"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 12:00:00"))
+        (testTime   "fifteenth of this month")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
 {-
 
-    time = parse_now("may 27th at 5pm", :context => :past)
-    assert_equal Time.local(2006, 5, 27, 17), time
-
-    time = parse_now("may 27th at 5", :ambiguous_time_range => :none)
-    assert_equal Time.local(2007, 5, 27, 5), time
-  end
 
   def test_handle_od_rm
     time = parse_now("fifteenth of this month")
