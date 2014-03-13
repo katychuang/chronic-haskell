@@ -44,7 +44,6 @@ Test-suite chronic-haskell-tests
     test-framework-hunit       >= 0.3     && < 0.4,
     test-framework-quickcheck2 >= 0.3     && < 0.4,
     old-locale                 >= 1.0.0.5 && < 1.1,
-    iso8601-time               >= 0.1.1   && < 0.2,
     -- Copied from regular dependencies:
     base               >= 4.6     && <4.7,
     parsec             >= 3.1.5   && < 3.2,
