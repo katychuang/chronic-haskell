@@ -63,10 +63,8 @@ testHandleGeneric = testGroup "test_handle_generic"
         _       -> assertBool "" True
 
     , testCase "9" $ (\now ->
-        Right (timeLiteral (fmt "%F%T") "2014-03-28") @=?
+        Right (timeLiteral (fmt "%F") "2014-03-28") @=?
         runChronicTest now (parserUnderTestMOpts [guess Begin] "28th")
-      ) $ timeLiteral (fmt "%F%T") "2014-03-10"
-
-
+      ) $ timeLiteral (fmt "%F") "2014-03-10"
     ]
 
