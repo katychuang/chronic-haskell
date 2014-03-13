@@ -36,9 +36,12 @@ monadicComaprisonCase name actual time now opts =
         Right (unActualTime actual) @=?
         runChronicTest (unCurrentTime now) (parserUnderTestMOpts (unParserOptions opts) (unTestTime time))
 
+chronicNowTime =  timeLiteral (fmt "%F%T") "2006-8-16:14:00:00"
+
 main :: IO ()
 main = defaultMain
     [ testHandleGeneric
+    , testHandleRmnSd
     ]
 
 testHandleGeneric :: Test
@@ -80,20 +83,100 @@ testHandleGeneric = testGroup "test_handle_generic"
         Right _ -> assertFailure "unexpectedly parsed"
         _       -> assertBool "" True
 
-    , testCase "9" $ (\now ->
-        Right (timeLiteral (fmt "%F") "2014-03-28") @=?
-        runChronicTest now (parserUnderTestMOpts [guess Begin] "28th")
-      ) $ timeLiteral (fmt "%F") "2014-03-10"
-
-    , monadicComaprisonCase "10"
+    , monadicComaprisonCase "9"
           (actualTime (timeLiteral (fmt "%F") "2014-03-28"))
           (testTime   "28th")
           (currentTime (timeLiteral (fmt "%F") "2014-03-10"))
           (parserOptions [])
     ]
 
-{-
 testHandleRmnSd :: Test
 testHandleRmnSd = testGroup "test_handle_rmnd_sd"
-    [ testCase "0
--}
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-03 12:00:00"))
+        (testTime   "aug 3")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-03 12:00:00"))
+        (testTime   "aug 3")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-03 12:00:00"))
+        (testTime   "aug. 3")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
+        (testTime   "aug 20")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
+        (testTime   "aug-20")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "6"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
+        (testTime   "aug 20")
+        (currentTime chronicNowTime)
+        (parserOptions [context Future])
+
+    , monadicComaprisonCase "7"
+        (actualTime (timeLiteral (fmt "%F %T") "2007-05-27 12:00:00"))
+        (testTime   "may 27")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "8"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 12:00:00"))
+        (testTime   "may 28")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "9"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:00:00"))
+        (testTime   "may 28 5pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "10"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:00:00"))
+        (testTime   "may 28 5pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "10"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:00:00"))
+        (testTime   "may 28 at 5pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "10"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:32:19"))
+        (testTime   "may 28 at 5:32.19pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "10"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:32:19"))
+        (testTime   "may 28 at 5:32.19pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+      {- original case
+      time = parse_now("may 28 at 5:32:19.764")
+      assert_in_delta Time.local(2007, 5, 28, 17, 32, 19, 764000), time, 0.001
+      -}
+    , monadicComaprisonCase "11"
+        (actualTime (timeLiteral (fmt "%F %T%Q") "2006-05-28 17:32:19.764"))
+        (testTime   "may 28 at 5:32:19.764")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+    ]
