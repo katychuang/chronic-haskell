@@ -43,6 +43,7 @@ main = defaultMain
     [ testHandleGeneric
     , testHandleRmnSd
     , testHandleRmnSdOn
+    , testHandleRmnOd
     ]
 
 testHandleGeneric :: Test
@@ -184,7 +185,7 @@ testHandleRmnSd = testGroup "test_handle_rmnd_sd"
 
 
 testHandleRmnSdOn :: Test
-testHandleRmnSdOn = testGroup "test_handle_rmnd_sd"
+testHandleRmnSdOn = testGroup "test_handle_rmnd_sd_on"
     [ monadicComaprisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-28 17:00:00"))
         (testTime   "5pm on may 28")
@@ -204,21 +205,40 @@ testHandleRmnSdOn = testGroup "test_handle_rmnd_sd"
         (parserOptions [ambiguousTimeRange Nothing])
     ]
 
+testHandleRmnOd :: Test
+testHandleRmnOd = testGroup "test_handle_rmnd_od"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2007-05-27 12:00:00"))
+        (testTime   "may 27th")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2007-05-27 12:00:00"))
+        (testTime   "may 27th")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 17:00:00"))
+        (testTime   "may 27th 5:00 pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 17:00:00"))
+        (testTime   "may 27th at 5pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    , monadicComaprisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 05:00:00"))
+        (testTime   "may 27th at 5")
+        (currentTime chronicNowTime)
+        (parserOptions [ambiguousTimeRange Nothing])
+    ]
+
 {-
-
-    time = parse_now("5 on may 28", :ambiguous_time_range => :none)
-    assert_equal Time.local(2007, 5, 28, 05), time
-  end
-
-  def test_handle_rmn_od
-    time = parse_now("may 27th")
-    assert_equal Time.local(2007, 5, 27, 12), time
-
-    time = parse_now("may 27th", :context => :past)
-    assert_equal Time.local(2006, 5, 27, 12), time
-
-    time = parse_now("may 27th 5:00 pm", :context => :past)
-    assert_equal Time.local(2006, 5, 27, 17), time
 
     time = parse_now("may 27th at 5pm", :context => :past)
     assert_equal Time.local(2006, 5, 27, 17), time
