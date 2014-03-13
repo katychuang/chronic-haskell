@@ -17,6 +17,7 @@ import           Test.HUnit                         ((@=?), assertBool, assertFa
 simpleComparisonCase name format time = testCase name $
   Right (timeLiteral format time) @=? parserUnderTest time
 
+
 main :: IO ()
 main = defaultMain
     [ testHandleGeneric
@@ -60,5 +61,12 @@ testHandleGeneric = testGroup "test_handle_generic"
     , testCase "8" $ case(parserUnderTest "1/1/32.1") of
         Right _ -> assertFailure "unexpectedly parsed"
         _       -> assertBool "" True
+
+    , testCase "9" $ (\now ->
+        Right (timeLiteral (fmt "%F%T") "2014-03-28") @=?
+        runChronicTest now (parserUnderTestMOpts [guess Begin] "28th")
+      ) $ timeLiteral (fmt "%F%T") "2014-03-10"
+
+
     ]
 
