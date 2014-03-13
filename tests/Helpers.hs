@@ -34,5 +34,5 @@ newtype Format = Format { getFormat :: String }
 
 fmt = Format
 
-parserUnderTest :: String -> DT.UTCTime
-parserUnderTest x = timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
+parserUnderTest :: String -> Either String DT.UTCTime
+parserUnderTest x = Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
