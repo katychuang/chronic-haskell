@@ -5,7 +5,7 @@ module Helpers
   , timeLiteral
   , fmt
   , parserUnderTest
-  , parserUnderTestMOpts
+  , parserUnderTestM
   ) where
 
 import qualified Control.Monad.State as CMS
@@ -35,15 +35,10 @@ newtype Format = Format { getFormat :: String }
 
 fmt = Format
 
-parserUnderTest :: String -> Either String DT.UTCTime
-parserUnderTest x = Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
 
-parserUnderTestOpts :: [(ChronicOptions -> ChronicOptions)] -> String -> Either String DT.UTCTime
-parserUnderTestOpts o x = Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
+parserUnderTest :: [(ChronicOptions -> ChronicOptions)] -> String -> Either String DT.UTCTime
+parserUnderTest o x = Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
 
-parserUnderTestM :: (MonadChronic m) => String -> m (Either String DT.UTCTime)
-parserUnderTestM x = return $ Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
-
-parserUnderTestMOpts :: (MonadChronic m)
+parserUnderTestM :: (MonadChronic m)
                      => [(ChronicOptions -> ChronicOptions)] -> String -> m (Either String DT.UTCTime)
-parserUnderTestMOpts o x = return $ Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
+parserUnderTestM o x = return $ Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
