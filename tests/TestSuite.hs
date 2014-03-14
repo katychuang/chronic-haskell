@@ -36,6 +36,14 @@ monadicComaprisonCase name actual time now opts =
         Right (unActualTime actual) @=?
         runChronicTest (unCurrentTime now) (parserUnderTestM (unParserOptions opts) (unTestTime time))
 
+monadicNilCase name time now opts =
+  testCase name $
+        case (runChronicTest (unCurrentTime now) (parserUnderTestM (unParserOptions opts) (unTestTime time))) of
+          Right _ -> assertFailure "unexpectedly parsed"
+          _       -> assertBool "" True
+
+    
+
 chronicNowTime =  timeLiteral (fmt "%F%T") "2006-8-16:14:00:00"
 
 main :: IO ()
@@ -54,6 +62,10 @@ main = defaultMain
     , testHandleSySmSdTTz
     , testHandleRmnSdSy 
     , testHandleRmnOdSy 
+    , testHandleOdRmnSy 
+    , testHandleSdRmnSy 
+    , testHandleSmSdSy 
+    , testHandleSdSmSy 
     ]
 
 testHandleGeneric :: Test
@@ -572,51 +584,105 @@ testHandleRmnOdSy = testGroup "test_handle_rmn_od_sy"
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
     ]
+testHandleOdRmnSy :: Test
+testHandleOdRmnSy = testGroup "test_handle_od_rmn_sy"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2012-02-22 12:00:00"))
+        (testTime   "22nd February 2012")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "1979-12-11 12:00:00"))
+        (testTime   "11th december 79")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
+
+testHandleSdRmnSy :: Test
+testHandleSdRmnSy = testGroup "test_handle_sd_rmn_sy"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2010-01-03 12:00:00"))
+        (testTime   "3 jan 2010")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2010-01-03 16:00:00"))
+        (testTime   "3 jan 2010 4pm")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-10-27 19:30:00"))
+        (testTime   "27 Oct 2006 7:30pm")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
+
+testHandleSmSdSy :: Test
+testHandleSmSdSy = testGroup "test_handle_sm_sd_sy"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 12:00:00"))
+        (testTime   "5/27/1979")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 04:00:00"))
+        (testTime   "5/27/1979 4am")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2011-07-12 12:00:00"))
+        (testTime   "7/12/11")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2011-12-07 12:00:00"))
+        (testTime   "7/12/11")
+        (currentTime chronicNowTime)
+        (parserOptions [endianPrecedence Little])
+
+    , monadicComaprisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2011-09-19 18:05:57"))
+        (testTime   "9/19/2011 6:05:57 PM")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2011-09-19 18:05:57"))
+        (testTime   "9/19/2011 6:05:57 PM")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    -- month day overflows
+    , monadicNilCase "5"
+        (testTime   "30/2/2000")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "6"
+        (actualTime (timeLiteral (fmt "%F %T") "2013-03-12 17:00:00"))
+        (testTime   "2013-03-12 17:00")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+
+    ]
+
+testHandleSdSmSy :: Test
+testHandleSdSmSy = testGroup "test_handle_sd_sm_sy"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "1979-05-12 17:00:00"))
+        (testTime   "27/5/1979")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
 {- 
 
 
-  def test_handle_od_rmn_sy
-    time = parse_now("22nd February 2012")
-    assert_equal Time.local(2012, 2, 22, 12), time
-
-    time = parse_now("11th december 79")
-    assert_equal Time.local(1979, 12, 11, 12), time
-  end
-
-  def test_handle_sd_rmn_sy
-    time = parse_now("3 jan 2010")
-    assert_equal Time.local(2010, 1, 3, 12), time
-
-    time = parse_now("3 jan 2010 4pm")
-    assert_equal Time.local(2010, 1, 3, 16), time
-
-    time = parse_now("27 Oct 2006 7:30pm")
-    assert_equal Time.local(2006, 10, 27, 19, 30), time
-  end
-
-  def test_handle_sm_sd_sy
-    time = parse_now("5/27/1979")
-    assert_equal Time.local(1979, 5, 27, 12), time
-
-    time = parse_now("5/27/1979 4am")
-    assert_equal Time.local(1979, 5, 27, 4), time
-
-    time = parse_now("7/12/11")
-    assert_equal Time.local(2011, 7, 12, 12), time
-
-    time = parse_now("7/12/11", :endian_precedence => :little)
-    assert_equal Time.local(2011, 12, 7, 12), time
-
-    time = parse_now("9/19/2011 6:05:57 PM")
-    assert_equal Time.local(2011, 9, 19, 18, 05, 57), time
-
-    # month day overflows
-    time = parse_now("30/2/2000")
-    assert_nil time
-
-    time = parse_now("2013-03-12 17:00", :context => :past)
-    assert_equal Time.local(2013, 3, 12, 17, 0, 0), time
-  end
 
   def test_handle_sd_sm_sy
     time = parse_now("27/5/1979")
