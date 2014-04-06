@@ -30,9 +30,9 @@ instance MonadChronic IO where
 
 
 data Guess = Guess Bool | End | Middle | Begin deriving (Show, Eq)
-data Context = Future | Past deriving (Show, Eq)
+data Context = Future | Past | None deriving (Show, Eq)
 data WeekStart = Sunday | Monday deriving (Show, Eq)
-data EndianPrecedence = MiddleEnd | Little deriving (Show, Eq)
+data EndianPrecedence = LittleMiddle | MiddleLittle deriving (Show, Eq)
 
 data ChronicOptions = ChronicOptions
   { _hours24                 :: Bool
