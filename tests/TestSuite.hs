@@ -81,6 +81,8 @@ main = defaultMain
     , testParseGuessRR
     , testParseGuessRRR
     , testParseGuessGR
+    , testParseGuessGRR
+    , testParseGuessGRRR
     ]
 
 {-- In the Chronic source, 
@@ -1665,37 +1667,70 @@ testParseGuessGRR  = testGroup "test_parse_guess_grr"
         (currentTime chronicNowTime)
         (parserOptions [])
     ]
+
+testParseGuessGRRR :: Test
+testParseGuessGRRR  = testGroup "test_parse_guess_grrr"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 18:00:00"))
+        (testTime   "today at 6:00pm")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+         
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 06:00:00"))
+        (testTime   "today at 6:00am")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+         
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 18:00:00"))
+        (testTime   "this day 1800")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+         
+    , monadicComaprisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 16:00:00"))
+        (testTime   "yesterday at 4:00pm")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+         
+    , monadicComaprisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 19:00:00"))
+        (testTime   "tomorrow evening at 7")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+         
+    , monadicComaprisonCase "6"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 05:30:00"))
+        (testTime   "tomorrow morning at 5:30")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+         
+    , monadicComaprisonCase "7"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 00:01:00"))
+        (testTime   "next monday at 12:01 am")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+         
+    , monadicComaprisonCase "8"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 12:01:00"))
+        (testTime   "next monday at 12:01 pm")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+         
+    , monadicComaprisonCase "9"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 20:15:00"))
+        (testTime   "sunday at 8:15pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+         
+    , monadicComaprisonCase "10"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 20:15:00"))
+        (testTime   "sunday at 8:15pm")
+        (currentTime chronicNowTime)
+        (parserOptions [context Past])
+    ]
 {- 
-  def test_parse_guess_grrr
-    time = parse_now("today at 6:00pm")
-    assert_equal Time.local(2006, 8, 16, 18), time
-
-    time = parse_now("today at 6:00am")
-    assert_equal Time.local(2006, 8, 16, 6), time
-
-    time = parse_now("this day 1800")
-    assert_equal Time.local(2006, 8, 16, 18), time
-
-    time = parse_now("yesterday at 4:00pm")
-    assert_equal Time.local(2006, 8, 15, 16), time
-
-    time = parse_now("tomorrow evening at 7")
-    assert_equal Time.local(2006, 8, 17, 19), time
-
-    time = parse_now("tomorrow morning at 5:30")
-    assert_equal Time.local(2006, 8, 17, 5, 30), time
-
-    time = parse_now("next monday at 12:01 am")
-    assert_equal Time.local(2006, 8, 21, 00, 1), time
-
-    time = parse_now("next monday at 12:01 pm")
-    assert_equal Time.local(2006, 8, 21, 12, 1), time
-
-    # with context
-    time = parse_now("sunday at 8:15pm", :context => :past)
-    assert_equal Time.local(2006, 8, 13, 20, 15), time
-  end
-
   def test_parse_guess_rgr
     time = parse_now("afternoon yesterday")
     assert_equal Time.local(2006, 8, 15, 15), time
