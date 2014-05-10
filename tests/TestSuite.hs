@@ -83,6 +83,9 @@ main = defaultMain
     , testParseGuessGR
     , testParseGuessGRR
     , testParseGuessGRRR
+    , testParseGuessRGR
+    , testParseGuessAAgo  
+    , testParseGuessSRP
     ]
 
 {-- In the Chronic source, 
@@ -1722,125 +1725,236 @@ testParseGuessGRRR  = testGroup "test_parse_guess_grrr"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 20:15:00"))
         (testTime   "sunday at 8:15pm")
         (currentTime chronicNowTime)
-        (parserOptions [context Past])
+        (parserOptions [])
          
     , monadicComaprisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 20:15:00"))
         (testTime   "sunday at 8:15pm")
         (currentTime chronicNowTime)
-        (parserOptions [context Past])
+        (parserOptions [])
     ]
+
+testParseGuessRGR :: Test
+testParseGuessRGR  = testGroup "test_parse_guess_rgr"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 15:00:00"))
+        (testTime   "afternoon yesterday")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-08 12:00:00"))
+        (testTime   "tuesday last week")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-08 12:00:00"))
+        (testTime   "tuesday last week")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
+         
+
+testParseGuessAAgo :: Test
+testParseGuessAAgo  = testGroup "test_parse_guess_a_ago"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:00:00"))
+        (testTime   "AN hour ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 14:00:00"))
+        (testTime   "A day ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-07-16 14:00:00"))
+        (testTime   "a month ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2005-08-16 14:00:00"))
+        (testTime   "a year ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
+         
+testParseGuessSRP :: Test
+testParseGuessSRP  = testGroup "test_parse_guess_s_r_p"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2003-08-16 14:00:00"))
+        (testTime   "3 years ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-07-16 14:00:00"))
+        (testTime   "1 month ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-02 14:00:00"))
+        (testTime   "1 fortnight ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-07-19 14:00:00"))
+        (testTime   "2 fortnights ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-07-26 14:00:00"))
+        (testTime   "3 weeks ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "6"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-05 12:00:00"))
+        (testTime   "2 weekends ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "7"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 14:00:00"))
+        (testTime   "3 days ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "8"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-14 12:00:00"))
+        (testTime   "1 monday ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "9"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-12 09:00:00"))
+        (testTime   "5 mornings ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "10"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-12 09:00:00"))
+        (testTime   "7 hours ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "11"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 07:00:00"))
+        (testTime   "7 hours ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "12"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:57:00"))
+        (testTime   "3 minutes ago")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "13"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:59:40"))
+        (testTime   "20 seconds before now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "14"
+        (actualTime (timeLiteral (fmt "%F %T") "2009-08-16 14:00:00"))
+        (testTime   "3 years from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "15"
+        (actualTime (timeLiteral (fmt "%F %T") "2007-02-16 14:00:00"))
+        (testTime   "6 months hence")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "16"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-09-27 14:00:00"))
+        (testTime   "3 fortnights hence")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "17"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-23 14:00:00"))
+        (testTime   "1 week from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "18"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-19 12:00:00"))
+        (testTime   "1 weekend from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "19"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-26 12:00:00"))
+        (testTime   "2 weekends from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "20"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 14:00:00"))
+        (testTime   "1 day hence")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "21"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 09:00:00"))
+        (testTime   "5 mornings hence")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "22"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 15:00:00"))
+        (testTime   "1 hour from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "23"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:20:00"))
+        (testTime   "20 minutes hence")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "24"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:20"))
+        (testTime   "20 seconds from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "25"
+        (actualTime (timeLiteral (fmt "%F %T") "2007-01-07 23:30:00"))
+        (testTime   "2 months ago")
+        (currentTime (timeLiteral (fmt "%F %T") "2007-03-07 23:30:00"))
+        (parserOptions [])
+
+    , monadicComaprisonCase "26"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:25:20"))
+        (testTime   "25 minutes and 20 seconds from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "27"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 14:20:00"))
+        (testTime   "24 hours and 20 minutes from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "27"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 14:20:00"))
+        (testTime   "24 hours 20 minutes from now")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
+         
 {- 
-  def test_parse_guess_rgr
-    time = parse_now("afternoon yesterday")
-    assert_equal Time.local(2006, 8, 15, 15), time
-
-    time = parse_now("tuesday last week")
-    assert_equal Time.local(2006, 8, 8, 12), time
-  end
-
-  def test_parse_guess_a_ago
-    time = parse_now("AN hour ago")
-    assert_equal Time.local(2006, 8, 16, 13), time
-
-    time = parse_now("A day ago")
-    assert_equal Time.local(2006, 8, 15, 14), time
-
-    time = parse_now("a month ago")
-    assert_equal Time.local(2006, 7, 16, 14), time
-
-    time = parse_now("a year ago")
-    assert_equal Time.local(2005, 8, 16, 14), time
-  end
-
-  def test_parse_guess_s_r_p
-    # past
-
-    time = parse_now("3 years ago")
-    assert_equal Time.local(2003, 8, 16, 14), time
-
-    time = parse_now("1 month ago")
-    assert_equal Time.local(2006, 7, 16, 14), time
-
-    time = parse_now("1 fortnight ago")
-    assert_equal Time.local(2006, 8, 2, 14), time
-
-    time = parse_now("2 fortnights ago")
-    assert_equal Time.local(2006, 7, 19, 14), time
-
-    time = parse_now("3 weeks ago")
-    assert_equal Time.local(2006, 7, 26, 14), time
-
-    time = parse_now("2 weekends ago")
-    assert_equal Time.local(2006, 8, 5), time
-
-    time = parse_now("3 days ago")
-    assert_equal Time.local(2006, 8, 13, 14), time
-
-    #time = parse_now("1 monday ago")
-    #assert_equal Time.local(2006, 8, 14, 12), time
-
-    time = parse_now("5 mornings ago")
-    assert_equal Time.local(2006, 8, 12, 9), time
-
-    time = parse_now("7 hours ago")
-    assert_equal Time.local(2006, 8, 16, 7), time
-
-    time = parse_now("3 minutes ago")
-    assert_equal Time.local(2006, 8, 16, 13, 57), time
-
-    time = parse_now("20 seconds before now")
-    assert_equal Time.local(2006, 8, 16, 13, 59, 40), time
-
-    # future
-
-    time = parse_now("3 years from now")
-    assert_equal Time.local(2009, 8, 16, 14, 0, 0), time
-
-    time = parse_now("6 months hence")
-    assert_equal Time.local(2007, 2, 16, 14), time
-
-    time = parse_now("3 fortnights hence")
-    assert_equal Time.local(2006, 9, 27, 14), time
-
-    time = parse_now("1 week from now")
-    assert_equal Time.local(2006, 8, 23, 14, 0, 0), time
-
-    time = parse_now("1 weekend from now")
-    assert_equal Time.local(2006, 8, 19), time
-
-    time = parse_now("2 weekends from now")
-    assert_equal Time.local(2006, 8, 26), time
-
-    time = parse_now("1 day hence")
-    assert_equal Time.local(2006, 8, 17, 14), time
-
-    time = parse_now("5 mornings hence")
-    assert_equal Time.local(2006, 8, 21, 9), time
-
-    time = parse_now("1 hour from now")
-    assert_equal Time.local(2006, 8, 16, 15), time
-
-    time = parse_now("20 minutes hence")
-    assert_equal Time.local(2006, 8, 16, 14, 20), time
-
-    time = parse_now("20 seconds from now")
-    assert_equal Time.local(2006, 8, 16, 14, 0, 20), time
-
-    time = Chronic.parse("2 months ago", :now => Time.parse("2007-03-07 23:30"))
-    assert_equal Time.local(2007, 1, 7, 23, 30), time
-
-    # Two repeaters
-    time = parse_now("25 minutes and 20 seconds from now")
-    assert_equal Time.local(2006, 8, 16, 14, 25, 20), time
-
-    time = parse_now("24 hours and 20 minutes from now")
-    assert_equal Time.local(2006, 8, 17, 14, 20, 0), time
-
-    time = parse_now("24 hours 20 minutes from now")
-    assert_equal Time.local(2006, 8, 17, 14, 20, 0), time
-  end
-
   def test_parse_guess_p_s_r
     time = parse_now("in 3 hours")
     assert_equal Time.local(2006, 8, 16, 17), time
