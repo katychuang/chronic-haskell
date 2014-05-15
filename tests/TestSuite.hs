@@ -86,6 +86,8 @@ main = defaultMain
     , testParseGuessRGR
     , testParseGuessAAgo  
     , testParseGuessSRP
+    , testParseGuessPSR
+    , testParseGuessSRPA
     ]
 
 {-- In the Chronic source, 
@@ -1954,33 +1956,48 @@ testParseGuessSRP  = testGroup "test_parse_guess_s_r_p"
         (parserOptions [])
     ]
          
+testParseGuessPSR :: Test
+testParseGuessPSR  = testGroup "test_parse_guess_p_s_r"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 17:00:00"))
+        (testTime "in 3 hours")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
+
+testParseGuessSRPA :: Test
+testParseGuessSRPA  = testGroup "test_parse_guess_s_r_p_a"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2003-08-17 12:00:00"))
+        (testTime "3 years ago tomorrow")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 12:00:00"))
+        (testTime "3 years ago this friday")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-05-17 17:00:00"))
+        (testTime "3 months ago saturday at 5:00 pm")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 14:00:00"))
+        (testTime "2 days from this second")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , monadicComaprisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 17:00:00"))
+        (testTime "7 hours before tomorrow at midnight")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
 {- 
-  def test_parse_guess_p_s_r
-    time = parse_now("in 3 hours")
-    assert_equal Time.local(2006, 8, 16, 17), time
-  end
-
-  def test_parse_guess_s_r_p_a
-    # past
-
-    time = parse_now("3 years ago tomorrow")
-    assert_equal Time.local(2003, 8, 17, 12), time
-
-    time = parse_now("3 years ago this friday")
-    assert_equal Time.local(2003, 8, 18, 12), time
-
-    time = parse_now("3 months ago saturday at 5:00 pm")
-    assert_equal Time.local(2006, 5, 19, 17), time
-
-    time = parse_now("2 days from this second")
-    assert_equal Time.local(2006, 8, 18, 14), time
-
-    time = parse_now("7 hours before tomorrow at midnight")
-    assert_equal Time.local(2006, 8, 17, 17), time
-
-    # future
-  end
-
   def test_parse_guess_o_r_g_r
     time = parse_now("3rd month next year", :guess => false)
     assert_equal Time.local(2007, 3), time.begin
