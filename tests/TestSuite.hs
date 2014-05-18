@@ -88,6 +88,7 @@ main = defaultMain
     , testParseGuessSRP
     , testParseGuessPSR
     , testParseGuessSRPA
+    , testParseGuessORGR  
     ]
 
 {-- In the Chronic source, 
@@ -1997,25 +1998,42 @@ testParseGuessSRPA  = testGroup "test_parse_guess_s_r_p_a"
         (currentTime chronicNowTime)
         (parserOptions [])
     ]
-{- 
-  def test_parse_guess_o_r_g_r
-    time = parse_now("3rd month next year", :guess => false)
-    assert_equal Time.local(2007, 3), time.begin
 
-    time = parse_now("3rd month next year", :guess => false)
-    assert_equal Time.local(2007, 3, 1), time.begin
+testParseGuessORGR :: Test
+testParseGuessORGR  = testGroup "test_parse_guess_o_r_g_r"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2007-03-01 12:00:00"))
+        (testTime "3rd month next year")
+        (currentTime chronicNowTime)
+        (parserOptions [guess (Guess False)])
 
-    time = parse_now("3rd thursday this september")
-    assert_equal Time.local(2006, 9, 21, 12), time
+    --TODO: redundant
+    , monadicComaprisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2007-03-01 12:00:00"))
+        (testTime "3rd month next year")
+        (currentTime chronicNowTime)
+        (parserOptions [guess (Guess False)])
 
-    now = Time.parse("1/10/2010")
-    time = parse_now("3rd thursday this november", :now => now)
-    assert_equal Time.local(2010, 11, 18, 12), time
+    , monadicComaprisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-09-21 12:00:00"))
+        (testTime "3rd thursday this september")
+        (currentTime chronicNowTime)
+        (parserOptions [])
 
-    time = parse_now("4th day last week")
-    assert_equal Time.local(2006, 8, 9, 12), time
-  end
+    , monadicComaprisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2010-11-18 12:00:00"))
+        (testTime "3rd thursday this september")
+        (currentTime (timeLiteral (fmt "%F %T") "2010-10-01 12:00:00"))
+        (parserOptions [])
 
+    , monadicComaprisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-09 12:00:00"))
+        (testTime "4th day last week")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+    ]
+
+{-
   def test_parse_guess_nonsense
     time = parse_now("some stupid nonsense")
     assert_equal nil, time
