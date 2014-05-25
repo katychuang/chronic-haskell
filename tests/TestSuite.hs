@@ -89,6 +89,7 @@ main = defaultMain
     , testParseGuessPSR
     , testParseGuessSRPA
     , testParseGuessORGR  
+    , testParseGuessNonsense 
     ]
 
 {-- In the Chronic source, 
@@ -2033,18 +2034,22 @@ testParseGuessORGR  = testGroup "test_parse_guess_o_r_g_r"
         (parserOptions [])
     ]
 
+testParseGuessNonsense :: Test
+testParseGuessNonsense  = testGroup "test_parse_guess_nonsense"
+    [ testCase "1" $ case(parserUnderTest [] "some stupid nonsense") of
+        Right _ -> assertFailure "unexpectedly parsed"
+        _       -> assertBool "" True
+
+    , testCase "2" $ case(parserUnderTest [] "Ham Sandwich") of
+        Right _ -> assertFailure "unexpectedly parsed"
+        _       -> assertBool "" True
+
+    , testCase "3" $ case(parserUnderTest [] "t") of
+        Right _ -> assertFailure "unexpectedly parsed"
+        _       -> assertBool "" True
+    ]
+
 {-
-  def test_parse_guess_nonsense
-    time = parse_now("some stupid nonsense")
-    assert_equal nil, time
-
-    time = parse_now("Ham Sandwich")
-    assert_equal nil, time
-
-    time = parse_now("t")
-    assert_equal nil, time
-  end
-
   def test_parse_span
     span = parse_now("friday", :guess => false)
     assert_equal Time.local(2006, 8, 18), span.begin
