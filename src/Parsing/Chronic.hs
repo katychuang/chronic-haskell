@@ -12,7 +12,7 @@ module Parsing.Chronic
   , endianPrecedence
   , context
   , ambiguousYearFutureBias
-   -- , 
+  , StructuredDateTime(..)
     )
   where
 
@@ -33,6 +33,14 @@ data Guess = Guess Bool | End | Middle | Begin deriving (Show, Eq)
 data Context = Future | Past | None deriving (Show, Eq)
 data WeekStart = Sunday | Monday deriving (Show, Eq)
 data EndianPrecedence = LittleMiddle | MiddleLittle deriving (Show, Eq)
+
+data StructuredDateTime = 
+  Exact DT.UTCTime 
+  | Range InclusiveMin InclusiveMax 
+  deriving (Eq, Show)
+
+type InclusiveMin = DT.UTCTime
+type InclusiveMax = DT.UTCTime
 
 data ChronicOptions = ChronicOptions
   { _hours24                 :: Bool

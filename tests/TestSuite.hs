@@ -18,7 +18,7 @@ import qualified Data.Time as DT
 
 
 simpleComparisonCase name format opts time = testCase name $
-  Right (timeLiteral format time) @=? parserUnderTest opts time
+  Right (Exact (timeLiteral format time)) @=? parserUnderTest opts time
 
 
 data ActualTime = ActualTime { unActualTime :: DT.UTCTime }
@@ -35,7 +35,7 @@ currentTime = CurrentTime
 
 monadicComaprisonCase name actual time now opts =
   testCase name $ 
-        Right (unActualTime actual) @=?
+        Right (Exact (unActualTime actual)) @=?
         runChronicTest (unCurrentTime now) (parserUnderTestM (unParserOptions opts) (unTestTime time))
 
 monadicNilCase name time now opts =
@@ -104,7 +104,7 @@ main = defaultMain
 testHandleGeneric :: Test
 testHandleGeneric = testGroup "test_handle_generic"
     [ testCase "0" $ (\time -> 
-        Right (timeLiteral (fmt "%FT%T") time) @=? parserUnderTest [] time
+        Right (Exact (timeLiteral (fmt "%FT%T") time)) @=? parserUnderTest [] time
       ) "2012-08-02T13:00:00"
 
     , simpleComparisonCase "1" (fmt "%FT%T") [] "2012-08-02T13:00:00"
@@ -991,7 +991,7 @@ testHandleOrr = testGroup "test_handle_orr" (
       [
         testCase (show (snd month)) $ 
           Right (snd month) @=? do
-            time <- runChronicTest chronicNowTime (parserUnderTestM []  ("5th tuesday in " <> (fst month))) 
+            (Exact time) <- runChronicTest chronicNowTime (parserUnderTestM []  ("5th tuesday in " <> (fst month))) 
             let (_, month, _) = (toGregorian . DT.utctDay) time
             return month
       ];
@@ -1004,7 +1004,7 @@ testHandleOrr = testGroup "test_handle_orr" (
       [
         testCase (show (snd month)) $ 
           Right (snd month) @=? do
-            time <- runChronicTest chronicNowTime (parserUnderTestM []  ("5th tuesday in " <> (fst month))) 
+            (Exact time) <- runChronicTest chronicNowTime (parserUnderTestM []  ("5th tuesday in " <> (fst month))) 
             let (_, month, _) = (toGregorian . DT.utctDay) time
             return month
       ];
@@ -2049,7 +2049,17 @@ testParseGuessNonsense  = testGroup "test_parse_guess_nonsense"
         _       -> assertBool "" True
     ]
 
+
 {-
+testParseSpan :: Test
+testParseSpan = testGroup "test_parse_span"
+    [ monadicComaprisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2007-03-01 12:00:00"))
+        (testTime "friday")
+        (currentTime chronicNowTime)
+        (parserOptions [guess (Guess False)])
+
+   
   def test_parse_span
     span = parse_now("friday", :guess => false)
     assert_equal Time.local(2006, 8, 18), span.begin

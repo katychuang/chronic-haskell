@@ -36,9 +36,9 @@ newtype Format = Format { getFormat :: String }
 fmt = Format
 
 
-parserUnderTest :: [(ChronicOptions -> ChronicOptions)] -> String -> Either String DT.UTCTime
-parserUnderTest o x = Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
+parserUnderTest :: [(ChronicOptions -> ChronicOptions)] -> String -> Either String StructuredDateTime
+parserUnderTest o x = Right $ Exact $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
 
 parserUnderTestM :: (MonadChronic m)
-                     => [(ChronicOptions -> ChronicOptions)] -> String -> m (Either String DT.UTCTime)
-parserUnderTestM o x = return $ Right $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
+                     => [(ChronicOptions -> ChronicOptions)] -> String -> m (Either String StructuredDateTime)
+parserUnderTestM o x = return $ Right $ Exact $ timeLiteral (fmt "%FT%T") "2012-08-02T13:00:00"
