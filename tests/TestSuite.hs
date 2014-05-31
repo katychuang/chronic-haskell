@@ -24,6 +24,12 @@ simpleComparisonCase name format opts time = testCase name $
 data ActualTime = ActualTime { unActualTime :: DT.UTCTime }
 actualTime = ActualTime
 
+data ActualMin = ActualMin { unActualMin :: DT.UTCTime }
+actualMin = ActualMin
+
+data ActualMax = ActualMax { unActualMax :: DT.UTCTime }
+actualMax = ActualMax
+
 data TestTime  = TestTime { unTestTime :: String }
 testTime = TestTime
 
@@ -33,9 +39,14 @@ parserOptions = ParserOptions
 data CurrentTime = CurrentTime { unCurrentTime :: DT.UTCTime }
 currentTime = CurrentTime
 
-monadicComaprisonCase name actual time now opts =
+exactComparisonCase name actual time now opts =
   testCase name $ 
         Right (Exact (unActualTime actual)) @=?
+        runChronicTest (unCurrentTime now) (parserUnderTestM (unParserOptions opts) (unTestTime time))
+
+rangeComparisonCase name actualMin actualMax time now opts =
+  testCase name $ 
+        Right (Range (unActualMin actualMin) (unActualMax actualMax)) @=?
         runChronicTest (unCurrentTime now) (parserUnderTestM (unParserOptions opts) (unTestTime time))
 
 monadicNilCase name time now opts =
@@ -90,6 +101,7 @@ main = defaultMain
     , testParseGuessSRPA
     , testParseGuessORGR  
     , testParseGuessNonsense 
+    , testParseSpan
     ]
 
 {-- In the Chronic source, 
@@ -140,7 +152,7 @@ testHandleGeneric = testGroup "test_handle_generic"
         Right _ -> assertFailure "unexpectedly parsed"
         _       -> assertBool "" True
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
           (actualTime (timeLiteral (fmt "%F") "2014-03-28"))
           (testTime   "28th")
           (currentTime (timeLiteral (fmt "%F") "2014-03-10"))
@@ -149,79 +161,79 @@ testHandleGeneric = testGroup "test_handle_generic"
 
 testHandleRmnSd :: Test
 testHandleRmnSd = testGroup "test_handle_rmnd_sd"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-03 12:00:00"))
         (testTime   "aug 3")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-03 12:00:00"))
         (testTime   "aug 3")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-03 12:00:00"))
         (testTime   "aug. 3")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
         (testTime   "aug 20")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
         (testTime   "aug-20")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
         (testTime   "aug 20")
         (currentTime chronicNowTime)
         (parserOptions [context Future])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-27 12:00:00"))
         (testTime   "may 27")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 12:00:00"))
         (testTime   "may 28")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:00:00"))
         (testTime   "may 28 5pm")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:00:00"))
         (testTime   "may 28 5pm")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:00:00"))
         (testTime   "may 28 at 5pm")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:32:19"))
         (testTime   "may 28 at 5:32.19pm")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-28 17:32:19"))
         (testTime   "may 28 at 5:32.19pm")
         (currentTime chronicNowTime)
@@ -231,7 +243,7 @@ testHandleRmnSd = testGroup "test_handle_rmnd_sd"
       time = parse_now("may 28 at 5:32:19.764")
       assert_in_delta Time.local(2007, 5, 28, 17, 32, 19, 764000), time, 0.001
       -}
-    , monadicComaprisonCase "11"
+    , exactComparisonCase "11"
         (actualTime (timeLiteral (fmt "%F %T%Q") "2006-05-28 17:32:19.764"))
         (testTime   "may 28 at 5:32:19.764")
         (currentTime chronicNowTime)
@@ -241,19 +253,19 @@ testHandleRmnSd = testGroup "test_handle_rmnd_sd"
 
 testHandleRmnSdOn :: Test
 testHandleRmnSdOn = testGroup "test_handle_rmnd_sd_on"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-28 17:00:00"))
         (testTime   "5pm on may 28")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-28 17:00:00"))
         (testTime   "5pm may 28")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-28 05:00:00"))
         (testTime   "5 on may 28")
         (currentTime chronicNowTime)
@@ -262,31 +274,31 @@ testHandleRmnSdOn = testGroup "test_handle_rmnd_sd_on"
 
 testHandleRmnOd :: Test
 testHandleRmnOd = testGroup "test_handle_rmnd_od"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-27 12:00:00"))
         (testTime   "may 27th")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-27 12:00:00"))
         (testTime   "may 27th")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 17:00:00"))
         (testTime   "may 27th 5:00 pm")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 17:00:00"))
         (testTime   "may 27th at 5pm")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 05:00:00"))
         (testTime   "may 27th at 5")
         (currentTime chronicNowTime)
@@ -295,7 +307,7 @@ testHandleRmnOd = testGroup "test_handle_rmnd_od"
 
 testHandleOdRm :: Test
 testHandleOdRm = testGroup "test_handle_od_rm"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 12:00:00"))
         (testTime   "fifteenth of this month")
         (currentTime chronicNowTime)
@@ -304,19 +316,19 @@ testHandleOdRm = testGroup "test_handle_od_rm"
 
 testHandleOdRmn :: Test
 testHandleOdRmn = testGroup "test_handle_od_rmn"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-02-22 12:00:00"))
         (testTime   "22nd February")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-31 18:30:00"))
         (testTime   "31st of may at 6:30pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-12-11 08:00:00"))
         (testTime   "11th december 8am")
         (currentTime chronicNowTime)
@@ -325,7 +337,7 @@ testHandleOdRmn = testGroup "test_handle_od_rmn"
 
 testHandleSyRmnOd :: Test
 testHandleSyRmnOd = testGroup "test_handle_sy_rmn_od"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2009-05-22 12:00:00"))
         (testTime   "2009 May 22nd")
         (currentTime chronicNowTime)
@@ -334,31 +346,31 @@ testHandleSyRmnOd = testGroup "test_handle_sy_rmn_od"
 
 testHandleSdRmn :: Test
 testHandleSdRmn = testGroup "test_handle_sd_rmn"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-02-22 12:00:00"))
         (testTime   "22 February")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2007-02-22 12:00:00"))
         (testTime   "22 feb")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2007-02-22 12:00:00"))
         (testTime   "22-feb")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-31 18:30:00"))
         (testTime   "31 of may at 6:30pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-12-11 08:00:00"))
         (testTime   "11 december 8am")
         (currentTime chronicNowTime)
@@ -367,25 +379,25 @@ testHandleSdRmn = testGroup "test_handle_sd_rmn"
 
 testHandleRmnOdOn :: Test
 testHandleRmnOdOn = testGroup "test_handle_rmn_od_on"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 17:00:00"))
         (testTime   "5:00 pm may 27th")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 17:00:00"))
         (testTime   "05:00 pm may 27th")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-27 17:00:00"))
         (testTime   "5pm on may 27th")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-27 05:00:00"))
         (testTime   "5 on may 27th")
         (currentTime chronicNowTime)
@@ -394,19 +406,19 @@ testHandleRmnOdOn = testGroup "test_handle_rmn_od_on"
 
 testHandleRmnSy :: Test
 testHandleRmnSy = testGroup "test_handle_rmn_sy"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "1997-05-16 12:00:00"))
         (testTime   "may 97")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2033-05-16 12:00:00"))
         (testTime   "may 33")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousYearFutureBias 10])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2032-05-16 12:00:00"))
         (testTime   "may 32")
         (currentTime chronicNowTime)
@@ -419,7 +431,7 @@ testHandleRmnSy = testGroup "test_handle_rmn_sy"
 -}
 testHandleRdnRmnDsTTzSy :: Test
 testHandleRdnRmnDsTTzSy = testGroup "test_handle_rdn_rmn_ds_t_tz_sy"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T %Z") "2007-01-02 17:00:00 PDT"))
         (testTime   "Mon Apr 02 17:00:00 PDT 2007")
         (currentTime chronicNowTime)
@@ -438,31 +450,31 @@ testHandleRdnRmnDsTTzSy = testGroup "test_handle_rdn_rmn_ds_t_tz_sy"
 -}
 testHandleSySmSdTTz :: Test
 testHandleSySmSdTTz = testGroup "test_handle_sy_sm_sd_t_tz"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T %z") "2011-07-03 22:11:35 +0100"))
         (testTime   "2011-07-03 22:11:35 +0100")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T %z") "2011-07-03 22:11:35 +0100"))
         (testTime   "2011-07-03 22:11:35 +01:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T %z") "2011-07-03 16:11:35 -0500"))
         (testTime   "2011-07-03 16:11:35 -05:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T UTC") "2011-07-03 21:11:35 UTC"))
         (testTime   "2011-07-03 21:11:35 UTC")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T%Q UTC") "2011-07-03 21:11:35.362 UTC"))
         (testTime   "2011-07-03 21:11:35.362 UTC")
         (currentTime chronicNowTime)
@@ -471,79 +483,79 @@ testHandleSySmSdTTz = testGroup "test_handle_sy_sm_sd_t_tz"
 
 testHandleRmnSdSy :: Test
 testHandleRmnSdSy = testGroup "test_handle_rmn_sd_sy"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F") "2010-11-18"))
         (testTime   "November 18, 2010")
         (currentTime chronicNowTime)
         (parserOptions [])
         
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-18 12:00:00"))
         (testTime   "November 18, 2010")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2004-02-14 12:00:00"))
         (testTime   "February 14, 2004")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2010-01-03 12:00:00"))
         (testTime   "jan 3 2010")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2010-01-03 12:00:00"))
         (testTime   "jan 3 2010")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2010-01-04 00:00:00"))
         (testTime   "jan 3 2010 midnight")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2010-01-03 04:00:00"))
         (testTime   "jan 3 2010 at 4")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-12 05:00:00"))
         (testTime   "may 27, 1979")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-12 05:00:00"))
         (testTime   "may 27 79")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 16:30:00"))
         (testTime   "may 27 79 4:30")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 04:30:00"))
         (testTime   "may 27 79 at 4:30")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2032-05-27 12:00:00"))
         (testTime   "may 27 32")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "11"
+    , exactComparisonCase "11"
         (actualTime (timeLiteral (fmt "%F %T") "2012-10-05 22:45:00"))
         (testTime   "oct 5 2012 1045pm")
         (currentTime chronicNowTime)
@@ -551,67 +563,67 @@ testHandleRmnSdSy = testGroup "test_handle_rmn_sd_sy"
     ]
 testHandleRmnOdSy :: Test
 testHandleRmnOdSy = testGroup "test_handle_rmn_od_sy"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2001-05-01 12:00:00"))
         (testTime   "may 1st 01")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-18 12:00:00"))
         (testTime   "November 18th 2010")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-18 12:00:00"))
         (testTime   "November 18th, 2010")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-19 00:00:00"))
         (testTime   "November 18th 2010 midnight")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-19 00:00:00"))
         (testTime   "November 18th 2010 at midnight")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-18 16:00:00"))
         (testTime   "November 18th 2010 at 4")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-18 04:00:00"))
         (testTime   "November 18th 2010 at 4")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "1979-03-30 12:00:00"))
         (testTime   "March 30th, 1979")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "1979-03-30 12:00:00"))
         (testTime   "March 30th 79")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "1979-03-30 16:30:00"))
         (testTime   "March 30th 79 4:30")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "11"
+    , exactComparisonCase "11"
         (actualTime (timeLiteral (fmt "%F %T") "1979-03-30 04:30:00"))
         (testTime   "March 30th 79 at 4:30")
         (currentTime chronicNowTime)
@@ -619,13 +631,13 @@ testHandleRmnOdSy = testGroup "test_handle_rmn_od_sy"
     ]
 testHandleOdRmnSy :: Test
 testHandleOdRmnSy = testGroup "test_handle_od_rmn_sy"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2012-02-22 12:00:00"))
         (testTime   "22nd February 2012")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "1979-12-11 12:00:00"))
         (testTime   "11th december 79")
         (currentTime chronicNowTime)
@@ -634,19 +646,19 @@ testHandleOdRmnSy = testGroup "test_handle_od_rmn_sy"
 
 testHandleSdRmnSy :: Test
 testHandleSdRmnSy = testGroup "test_handle_sd_rmn_sy"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2010-01-03 12:00:00"))
         (testTime   "3 jan 2010")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2010-01-03 16:00:00"))
         (testTime   "3 jan 2010 4pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-10-27 19:30:00"))
         (testTime   "27 Oct 2006 7:30pm")
         (currentTime chronicNowTime)
@@ -655,37 +667,37 @@ testHandleSdRmnSy = testGroup "test_handle_sd_rmn_sy"
 
 testHandleSmSdSy :: Test
 testHandleSmSdSy = testGroup "test_handle_sm_sd_sy"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 12:00:00"))
         (testTime   "5/27/1979")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 04:00:00"))
         (testTime   "5/27/1979 4am")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2011-07-12 12:00:00"))
         (testTime   "7/12/11")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2011-12-07 12:00:00"))
         (testTime   "7/12/11")
         (currentTime chronicNowTime)
         (parserOptions [endianPrecedence LittleMiddle])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2011-09-19 18:05:57"))
         (testTime   "9/19/2011 6:05:57 PM")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2011-09-19 18:05:57"))
         (testTime   "9/19/2011 6:05:57 PM")
         (currentTime chronicNowTime)
@@ -697,7 +709,7 @@ testHandleSmSdSy = testGroup "test_handle_sm_sd_sy"
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2013-03-12 17:00:00"))
         (testTime   "2013-03-12 17:00")
         (currentTime chronicNowTime)
@@ -707,43 +719,43 @@ testHandleSmSdSy = testGroup "test_handle_sm_sd_sy"
 
 testHandleSdSmSy :: Test
 testHandleSdSmSy = testGroup "test_handle_sd_sm_sy"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 17:00:00"))
         (testTime   "27/5/1979")
         (currentTime chronicNowTime)
         (parserOptions [])
      
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 07:00:00"))
         (testTime   "27/5/1979 @ 700")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 07:00:00"))
         (testTime   "18/3/2012 @ 700")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2012-03-18 17:26:00"))
         (testTime   "03/18/2012 09:26 pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2013-07-30 16:34:22"))
         (testTime   "30.07.2013 16:34:22")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2013-09-08 12:00:00"))
         (testTime   "09.08.2013")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2013-07-30 21:53:49"))
         (testTime   "30-07-2013 21:53:49")
         (currentTime chronicNowTime)
@@ -751,86 +763,86 @@ testHandleSdSmSy = testGroup "test_handle_sd_sm_sy"
     ]
 testHandleSySmSd :: Test
 testHandleSySmSd = testGroup "test_handle_sy_sm_sd"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2000-01-01 12:00:00"))
         (testTime   "2000-1-1")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
         (testTime   "2006-08-20")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 19:00:00"))
         (testTime   "2006-08-20 7pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 03:00:00"))
         (testTime   "2006-08-20 03:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 03:30:30"))
         (testTime   "2006-08-20 03:30:30")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 15:30:30"))
         (testTime   "2006-08-20 15:30:30")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 15:30:30"))
         (testTime   "2006-08-20 15:30.30")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T%Q") "2006-08-20 15:30:30.000536"))
         (testTime   "2006-08-20 15:30.30:000536")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "1902-08-20 12:00:00"))
         (testTime   "1902-08-20")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2013-07-30 11:45:23"))
         (testTime   "2013.07.30 11:45:23")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "11"
+    , exactComparisonCase "11"
         (actualTime (timeLiteral (fmt "%F %T") "2013-07-30 11:45:23"))
         (testTime   "2013.07.30 11:45:23")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "12"
+    , exactComparisonCase "12"
         (actualTime (timeLiteral (fmt "%F %T") "2013-08-09 12:00:00"))
         (testTime   "2013.08.09")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "13"
+    , exactComparisonCase "13"
         (actualTime (timeLiteral (fmt "%F %T") "2013-08-09 12:00:00"))
         (testTime   "2013.08.09")
         (currentTime chronicNowTime)
         (parserOptions [])
 
     -- exif date time original (?)
-    , monadicComaprisonCase "14"
+    , exactComparisonCase "14"
         (actualTime (timeLiteral (fmt "%F %T") "2012-05-25 22:06:50"))
         (testTime   "2012:05:25 22:06:50")
         (currentTime chronicNowTime)
@@ -840,49 +852,49 @@ testHandleSySmSd = testGroup "test_handle_sy_sm_sd"
 
 testHandleSmSd :: Test
 testHandleSmSd = testGroup "test_handle_sm_sd"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-06 12:00:00"))
         (testTime   "05/06")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2007-06-05 12:00:00"))
         (testTime   "05/06")
         (currentTime chronicNowTime)
         (parserOptions [endianPrecedence LittleMiddle])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2007-06-05 18:05:57"))
         (testTime   "05/06 6:05:57 PM")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-06 18:05:57"))
         (testTime   "05/06 6:05:57 PM")
         (currentTime chronicNowTime)
         (parserOptions [endianPrecedence LittleMiddle])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-09-13 12:00:00"))
         (testTime   "13/09")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2007-05-06 12:00:00"))
         (testTime   "05/06")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2007-01-13 12:00:00"))
         (testTime   "1/13")
         (currentTime chronicNowTime)
         (parserOptions [context Future])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-03-13 12:00:00"))
         (testTime   "3/13")
         (currentTime chronicNowTime)
@@ -891,13 +903,13 @@ testHandleSmSd = testGroup "test_handle_sm_sd"
 
 testHandleSySm :: Test
 testHandleSySm = testGroup "test_handle_sy_sm"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2012-06-16 12:00:00"))
         (testTime   "2102-06")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2013-12-16 12:00:00"))
         (testTime   "2013/12")
         (currentTime chronicNowTime)
@@ -906,49 +918,49 @@ testHandleSySm = testGroup "test_handle_sy_sm"
 
 testHandleR :: Test
 testHandleR = testGroup "test_handle_r"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-19 09:00:00"))
         (testTime   "9am on Saturday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-22 12:00:00"))
         (testTime   "on Tuesday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:00:00"))
         (testTime   "1:00:00 PM")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:00"))
         (testTime   "today at 2:00:00")
         (currentTime chronicNowTime)
         (parserOptions [hours24 False])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 02:00:00"))
         (testTime   "today at 2:00:00 AM")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 02:00:00"))
         (testTime   "today at 2:00:00 AM")
         (currentTime chronicNowTime)
         (parserOptions [hours24 False])
      
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 03:00:00"))
         (testTime   "today at 3:00:00")
         (currentTime chronicNowTime)
         (parserOptions [hours24 True])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 04:00:00"))
         (testTime   "tommorrow at 4a.m.")
         (currentTime chronicNowTime)
@@ -957,13 +969,13 @@ testHandleR = testGroup "test_handle_r"
 
 testHandleSRPA :: Test
 testHandleSRPA = testGroup "test_handle_s_r_p_a"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-14 00:00:00"))
         (testTime   "two days ago 0:0:0am")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-14 00:00:00"))
         (testTime   "two days ago 00:00:00am")
         (currentTime chronicNowTime)
@@ -972,7 +984,7 @@ testHandleSRPA = testGroup "test_handle_s_r_p_a"
 
 testHandleOrr :: Test
 testHandleOrr = testGroup "test_handle_orr" (
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-01-30 12:00:00"))
         (testTime   "5th tuesday in january")
         (currentTime chronicNowTime)
@@ -1013,7 +1025,7 @@ testHandleOrr = testGroup "test_handle_orr" (
 
 testHandleORSR :: Test
 testHandleORSR = testGroup "test_handle_o_r_s_r" 
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-11-15 12:00:00"))
         (testTime   "3rd wednesday in november")
         (currentTime chronicNowTime)
@@ -1023,7 +1035,7 @@ testHandleORSR = testGroup "test_handle_o_r_s_r"
         Right _ -> assertFailure "unexpectedly parsed"
         _       -> assertBool "" True
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2007-01-20 12:00:00"))
         (testTime   "3rd wednesday in 2007")
         (currentTime chronicNowTime)
@@ -1032,7 +1044,7 @@ testHandleORSR = testGroup "test_handle_o_r_s_r"
      
 testHandleORGR :: Test
 testHandleORGR = testGroup "test_handle_o_r_g_r" 
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-03-01 00:00:00"))
         (testTime   "3rd month next year")
         (currentTime chronicNowTime)
@@ -1040,7 +1052,7 @@ testHandleORGR = testGroup "test_handle_o_r_g_r"
 
     --skip test 2, not relevant
      
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-09-21 12:00:00"))
         (testTime   "3rd thursday this september")
         (currentTime chronicNowTime)
@@ -1048,7 +1060,7 @@ testHandleORGR = testGroup "test_handle_o_r_g_r"
 
     -- skip test 3, not relevant
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-09 12:00:00"))
         (testTime   "4th day last week")
         (currentTime chronicNowTime)
@@ -1057,13 +1069,13 @@ testHandleORGR = testGroup "test_handle_o_r_g_r"
 
 testHandleSmRmnSy :: Test
 testHandleSmRmnSy  = testGroup "test_handle_sm_rmn_sy" 
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2011-03-30 12:00:00"))
         (testTime   "30-Mar-11")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2012-08-31 12:00:00"))
         (testTime   "31-Aug-12")
         (currentTime chronicNowTime)
@@ -1073,55 +1085,55 @@ testHandleSmRmnSy  = testGroup "test_handle_sm_rmn_sy"
 
 testParseGuessR :: Test
 testParseGuessR  = testGroup "test_parse_guess_r" 
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 12:00:00"))
         (testTime   "friday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-22 12:00:00"))
         (testTime   "tue")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 17:00:00"))
         (testTime   "5")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 17:00:00"))
         (testTime   "5")
         (currentTime (timeLiteral (fmt "%F %R") "2006-08-16 03:00:00"))
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 13:00:00"))
         (testTime   "13:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 13:45:00"))
         (testTime   "13:45")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:01:00"))
         (testTime   "1:01pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:01:00"))
         (testTime   "2:01pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-11-16 12:00:00"))
         (testTime   "november")
         (currentTime chronicNowTime)
@@ -1130,85 +1142,85 @@ testParseGuessR  = testGroup "test_parse_guess_r"
 
 testParseGuessRR :: Test
 testParseGuessRR  = testGroup "test_parse_guess_rr"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 13:00:00"))
         (testTime   "friday 13:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 16:00:00"))
         (testTime   "monday 4:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-19 04:00:00"))
         (testTime   "sat 4:00")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 04:20:00"))
         (testTime   "sunday 4:20")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 16:00:00"))
         (testTime   "4 pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 04:00:00"))
         (testTime   "4 am")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 12:00:00"))
         (testTime   "12 pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 12:00:01"))
         (testTime   "12:01 pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 00:00:01"))
         (testTime   "12:01 am")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 00:00:00"))
         (testTime   "12 am")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 04:00:00"))
         (testTime   "4:00 in the morning")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "11"
+    , exactComparisonCase "11"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 00:00:10"))
         (testTime   "0:10")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "12"
+    , exactComparisonCase "12"
         (actualTime (timeLiteral (fmt "%F %T") "2006-11-04 12:00:00"))
         (testTime   "november 4")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "13"
+    , exactComparisonCase "13"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-24 12:00:00"))
         (testTime   "aug 24")
         (currentTime chronicNowTime)
@@ -1217,31 +1229,31 @@ testParseGuessRR  = testGroup "test_parse_guess_rr"
 
 testParseGuessRRR :: Test
 testParseGuessRRR  = testGroup "test_parse_guess_rrr"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 13:00:00"))
         (testTime   "friday 1 pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 23:00:00"))
         (testTime   "friday 11 at night")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 23:00:00"))
         (testTime   "friday 11 in the evening")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 06:00:00"))
         (testTime   "sunaday 6am")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 19:00:00"))
         (testTime   "friday evening at 7")
         (currentTime chronicNowTime)
@@ -1250,325 +1262,325 @@ testParseGuessRRR  = testGroup "test_parse_guess_rrr"
 
 testParseGuessGR :: Test
 testParseGuessGR  = testGroup "test_parse_guess_gr"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 12:00:00"))
         (testTime   "this year")
         (currentTime chronicNowTime)
         (parserOptions [guess (Guess False)])
          
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-01-01 12:00:00"))
         (testTime   "this year")
         (currentTime chronicNowTime)
         (parserOptions [guess (Guess False), context Past])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-24 12:00:00"))
         (testTime   "this month")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-08 12:00:00"))
         (testTime   "this month")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-12-16 12:00:00"))
         (testTime   "next monrth")
         (currentTime (timeLiteral (fmt "%F %T") "2006-11-15 12:00:00"))
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2005-11-16 16:00:00"))
         (testTime   "last november")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 19:30:00"))
         (testTime   "this fortnight")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-14 19:00:00"))
         (testTime   "this fortnight")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 07:30:00"))
         (testTime   "this week")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-14 19:00:00"))
         (testTime   "this week")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 12:00:00"))
         (testTime   "this week")
         (currentTime chronicNowTime)
         (parserOptions [context Past, guess Begin])
 
-    , monadicComaprisonCase "11"
+    , exactComparisonCase "11"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-14 12:00:00"))
         (testTime   "this week")
         (currentTime chronicNowTime)
         (parserOptions [context Past, guess Begin, weekStart Monday])
 
-    , monadicComaprisonCase "12"
+    , exactComparisonCase "12"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
         (testTime   "this weekend")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "13"
+    , exactComparisonCase "13"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 12:00:00"))
         (testTime   "this weekend")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "14"
+    , exactComparisonCase "14"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 12:00:00"))
         (testTime   "last weekend")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "15"
+    , exactComparisonCase "15"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 19:00:00"))
         (testTime   "this day")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "16"
+    , exactComparisonCase "16"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 07:00:00"))
         (testTime   "this day")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "17"
+    , exactComparisonCase "17"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 19:00:00"))
         (testTime   "today")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "18"
+    , exactComparisonCase "18"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 12:00:00"))
         (testTime   "yesterday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "19"
+    , exactComparisonCase "19"
         (actualTime (timeLiteral (fmt "%F %T") "2011-05-27 23:10:00"))
         (testTime   "yesterday")
         (currentTime (timeLiteral (fmt "%F %T") "2011-05-27 23:10:00"))
         (parserOptions [])
 
-    , monadicComaprisonCase "20"
+    , exactComparisonCase "20"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 12:00:00"))
         (testTime   "tommorow")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "21"
+    , exactComparisonCase "21"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-22 12:00:00"))
         (testTime   "this tuesday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "22"
+    , exactComparisonCase "22"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-22 12:00:00"))
         (testTime   "next tuesday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "23"
+    , exactComparisonCase "23"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 12:00:00"))
         (testTime   "last tuesday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "24"
+    , exactComparisonCase "24"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-23 12:00:00"))
         (testTime   "this wed")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "25"
+    , exactComparisonCase "25"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-23 12:00:00"))
         (testTime   "next wed")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "26"
+    , exactComparisonCase "26"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-09 12:00:00"))
         (testTime   "last wed")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "27"
+    , exactComparisonCase "27"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 12:00:00"))
         (testTime   "mon")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "28"
+    , exactComparisonCase "28"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 12:00:00"))
         (testTime   "mun")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "29"
+    , exactComparisonCase "29"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-22 12:00:00"))
         (testTime   "tue")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "30"
+    , exactComparisonCase "30"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-22 12:00:00"))
         (testTime   "tus")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "31"
+    , exactComparisonCase "31"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-23 12:00:00"))
         (testTime   "wed")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "32"
+    , exactComparisonCase "32"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-23 12:00:00"))
         (testTime   "wenns")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "33"
+    , exactComparisonCase "33"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 12:00:00"))
         (testTime   "thu")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "34"
+    , exactComparisonCase "34"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 12:00:00"))
         (testTime   "thur")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "35"
+    , exactComparisonCase "35"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 12:00:00"))
         (testTime   "fri")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "36"
+    , exactComparisonCase "36"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 12:00:00"))
         (testTime   "fry")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "37"
+    , exactComparisonCase "37"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-19 12:00:00"))
         (testTime   "sat")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "38"
+    , exactComparisonCase "38"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-19 12:00:00"))
         (testTime   "satterday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "39"
+    , exactComparisonCase "39"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
         (testTime   "sun")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "40"
+    , exactComparisonCase "40"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-20 12:00:00"))
         (testTime   "sum")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "41"
+    , exactComparisonCase "41"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 09:00:00"))
         (testTime   "this morning")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "42"
+    , exactComparisonCase "42"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 22:00:00"))
         (testTime   "tonight")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "43"
+    , exactComparisonCase "43"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 15:30:00"))
         (testTime   "next hr")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "44"
+    , exactComparisonCase "44"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 15:30:00"))
         (testTime   "next hrs")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "45"
+    , exactComparisonCase "45"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:01:30"))
         (testTime   "next min")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "46"
+    , exactComparisonCase "46"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:01:30"))
         (testTime   "next mins")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "47"
+    , exactComparisonCase "47"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:01:30"))
         (testTime   "next minute")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "48"
+    , exactComparisonCase "48"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:01"))
         (testTime   "next sec")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "49"
+    , exactComparisonCase "49"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:01"))
         (testTime   "next secs")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "50"
+    , exactComparisonCase "50"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:00"))
         (testTime   "this second")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "51"
+    , exactComparisonCase "51"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:00"))
         (testTime   "this second")
         (currentTime chronicNowTime)
         (parserOptions [context Past])
 
-    , monadicComaprisonCase "52"
+    , exactComparisonCase "52"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:01"))
         (testTime   "next second")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "53"
+    , exactComparisonCase "53"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:59:59"))
         (testTime   "lasst second")
         (currentTime chronicNowTime)
@@ -1578,97 +1590,97 @@ testParseGuessGR  = testGroup "test_parse_guess_gr"
 
 testParseGuessGRR :: Test
 testParseGuessGRR  = testGroup "test_parse_guess_grr"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 16:00:00"))
         (testTime   "yesterday at 4:00")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 09:00:00"))
         (testTime   "today at 9:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 21:00:00"))
         (testTime   "today at 2100")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 09:00:00"))
         (testTime   "this day at 0900")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 09:00:00"))
         (testTime   "tomorrow at 0900")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 04:00:00"))
         (testTime   "yesterday at 4:00")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-11 16:00:00"))
         (testTime   "last friday at 4:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-23 16:00:00"))
         (testTime   "last wed 4:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 04:00:00"))
         (testTime   "yesterday at 4:00")
         (currentTime chronicNowTime)
         (parserOptions [ambiguousTimeRange Nothing])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-11 16:00:00"))
         (testTime   "last friday at 4:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "11"
+    , exactComparisonCase "11"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-23 16:00:00"))
         (testTime   "next wed 4:00")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "12"
+    , exactComparisonCase "12"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 15:00:00"))
         (testTime   "yesterday afternoon")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "13"
+    , exactComparisonCase "13"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-08 12:00:00"))
         (testTime   "last week tuesday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "14"
+    , exactComparisonCase "14"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 19:00:00"))
         (testTime   "tonight at 7")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "15"
+    , exactComparisonCase "15"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 19:00:00"))
         (testTime   "tonight 7")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "16"
+    , exactComparisonCase "16"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 19:00:00"))
         (testTime   "7 tonight")
         (currentTime chronicNowTime)
@@ -1677,61 +1689,61 @@ testParseGuessGRR  = testGroup "test_parse_guess_grr"
 
 testParseGuessGRRR :: Test
 testParseGuessGRRR  = testGroup "test_parse_guess_grrr"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 18:00:00"))
         (testTime   "today at 6:00pm")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 06:00:00"))
         (testTime   "today at 6:00am")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 18:00:00"))
         (testTime   "this day 1800")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 16:00:00"))
         (testTime   "yesterday at 4:00pm")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 19:00:00"))
         (testTime   "tomorrow evening at 7")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 05:30:00"))
         (testTime   "tomorrow morning at 5:30")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 00:01:00"))
         (testTime   "next monday at 12:01 am")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 12:01:00"))
         (testTime   "next monday at 12:01 pm")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 20:15:00"))
         (testTime   "sunday at 8:15pm")
         (currentTime chronicNowTime)
         (parserOptions [])
          
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 20:15:00"))
         (testTime   "sunday at 8:15pm")
         (currentTime chronicNowTime)
@@ -1740,19 +1752,19 @@ testParseGuessGRRR  = testGroup "test_parse_guess_grrr"
 
 testParseGuessRGR :: Test
 testParseGuessRGR  = testGroup "test_parse_guess_rgr"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 15:00:00"))
         (testTime   "afternoon yesterday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-08 12:00:00"))
         (testTime   "tuesday last week")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-08 12:00:00"))
         (testTime   "tuesday last week")
         (currentTime chronicNowTime)
@@ -1762,25 +1774,25 @@ testParseGuessRGR  = testGroup "test_parse_guess_rgr"
 
 testParseGuessAAgo :: Test
 testParseGuessAAgo  = testGroup "test_parse_guess_a_ago"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:00:00"))
         (testTime   "AN hour ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 14:00:00"))
         (testTime   "A day ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-07-16 14:00:00"))
         (testTime   "a month ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2005-08-16 14:00:00"))
         (testTime   "a year ago")
         (currentTime chronicNowTime)
@@ -1789,169 +1801,169 @@ testParseGuessAAgo  = testGroup "test_parse_guess_a_ago"
          
 testParseGuessSRP :: Test
 testParseGuessSRP  = testGroup "test_parse_guess_s_r_p"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2003-08-16 14:00:00"))
         (testTime   "3 years ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-07-16 14:00:00"))
         (testTime   "1 month ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-02 14:00:00"))
         (testTime   "1 fortnight ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-07-19 14:00:00"))
         (testTime   "2 fortnights ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-07-26 14:00:00"))
         (testTime   "3 weeks ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "6"
+    , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-05 12:00:00"))
         (testTime   "2 weekends ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "7"
+    , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 14:00:00"))
         (testTime   "3 days ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "8"
+    , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-14 12:00:00"))
         (testTime   "1 monday ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "9"
+    , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-12 09:00:00"))
         (testTime   "5 mornings ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "10"
+    , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-12 09:00:00"))
         (testTime   "7 hours ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "11"
+    , exactComparisonCase "11"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 07:00:00"))
         (testTime   "7 hours ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "12"
+    , exactComparisonCase "12"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:57:00"))
         (testTime   "3 minutes ago")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "13"
+    , exactComparisonCase "13"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:59:40"))
         (testTime   "20 seconds before now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "14"
+    , exactComparisonCase "14"
         (actualTime (timeLiteral (fmt "%F %T") "2009-08-16 14:00:00"))
         (testTime   "3 years from now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "15"
+    , exactComparisonCase "15"
         (actualTime (timeLiteral (fmt "%F %T") "2007-02-16 14:00:00"))
         (testTime   "6 months hence")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "16"
+    , exactComparisonCase "16"
         (actualTime (timeLiteral (fmt "%F %T") "2006-09-27 14:00:00"))
         (testTime   "3 fortnights hence")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "17"
+    , exactComparisonCase "17"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-23 14:00:00"))
         (testTime   "1 week from now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "18"
+    , exactComparisonCase "18"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-19 12:00:00"))
         (testTime   "1 weekend from now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "19"
+    , exactComparisonCase "19"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-26 12:00:00"))
         (testTime   "2 weekends from now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "20"
+    , exactComparisonCase "20"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 14:00:00"))
         (testTime   "1 day hence")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "21"
+    , exactComparisonCase "21"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 09:00:00"))
         (testTime   "5 mornings hence")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "22"
+    , exactComparisonCase "22"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 15:00:00"))
         (testTime   "1 hour from now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "23"
+    , exactComparisonCase "23"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:20:00"))
         (testTime   "20 minutes hence")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "24"
+    , exactComparisonCase "24"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:20"))
         (testTime   "20 seconds from now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "25"
+    , exactComparisonCase "25"
         (actualTime (timeLiteral (fmt "%F %T") "2007-01-07 23:30:00"))
         (testTime   "2 months ago")
         (currentTime (timeLiteral (fmt "%F %T") "2007-03-07 23:30:00"))
         (parserOptions [])
 
-    , monadicComaprisonCase "26"
+    , exactComparisonCase "26"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 14:25:20"))
         (testTime   "25 minutes and 20 seconds from now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "27"
+    , exactComparisonCase "27"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 14:20:00"))
         (testTime   "24 hours and 20 minutes from now")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "27"
+    , exactComparisonCase "27"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 14:20:00"))
         (testTime   "24 hours 20 minutes from now")
         (currentTime chronicNowTime)
@@ -1960,7 +1972,7 @@ testParseGuessSRP  = testGroup "test_parse_guess_s_r_p"
          
 testParseGuessPSR :: Test
 testParseGuessPSR  = testGroup "test_parse_guess_p_s_r"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 17:00:00"))
         (testTime "in 3 hours")
         (currentTime chronicNowTime)
@@ -1969,31 +1981,31 @@ testParseGuessPSR  = testGroup "test_parse_guess_p_s_r"
 
 testParseGuessSRPA :: Test
 testParseGuessSRPA  = testGroup "test_parse_guess_s_r_p_a"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2003-08-17 12:00:00"))
         (testTime "3 years ago tomorrow")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 12:00:00"))
         (testTime "3 years ago this friday")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-05-17 17:00:00"))
         (testTime "3 months ago saturday at 5:00 pm")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 14:00:00"))
         (testTime "2 days from this second")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 17:00:00"))
         (testTime "7 hours before tomorrow at midnight")
         (currentTime chronicNowTime)
@@ -2002,32 +2014,32 @@ testParseGuessSRPA  = testGroup "test_parse_guess_s_r_p_a"
 
 testParseGuessORGR :: Test
 testParseGuessORGR  = testGroup "test_parse_guess_o_r_g_r"
-    [ monadicComaprisonCase "1"
+    [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-03-01 12:00:00"))
         (testTime "3rd month next year")
         (currentTime chronicNowTime)
         (parserOptions [guess (Guess False)])
 
     --TODO: redundant
-    , monadicComaprisonCase "2"
+    , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2007-03-01 12:00:00"))
         (testTime "3rd month next year")
         (currentTime chronicNowTime)
         (parserOptions [guess (Guess False)])
 
-    , monadicComaprisonCase "3"
+    , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-09-21 12:00:00"))
         (testTime "3rd thursday this september")
         (currentTime chronicNowTime)
         (parserOptions [])
 
-    , monadicComaprisonCase "4"
+    , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-18 12:00:00"))
         (testTime "3rd thursday this september")
         (currentTime (timeLiteral (fmt "%F %T") "2010-10-01 12:00:00"))
         (parserOptions [])
 
-    , monadicComaprisonCase "5"
+    , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-09 12:00:00"))
         (testTime "4th day last week")
         (currentTime chronicNowTime)
@@ -2049,31 +2061,31 @@ testParseGuessNonsense  = testGroup "test_parse_guess_nonsense"
         _       -> assertBool "" True
     ]
 
-
-{-
 testParseSpan :: Test
 testParseSpan = testGroup "test_parse_span"
-    [ monadicComaprisonCase "1"
-        (actualTime (timeLiteral (fmt "%F %T") "2007-03-01 12:00:00"))
+    [ rangeComparisonCase "1"
+        (actualMin (timeLiteral (fmt "%F %T") "2006-08-18 00:00:00"))
+        (actualMax (timeLiteral (fmt "%F %T") "2006-08-18 00:00:00"))
         (testTime "friday")
         (currentTime chronicNowTime)
         (parserOptions [guess (Guess False)])
 
+    , rangeComparisonCase "2"
+        (actualMin (timeLiteral (fmt "%F %T") "2006-11-01 00:00:00"))
+        (actualMax (timeLiteral (fmt "%F %T") "2006-12-01 00:00:00"))
+        (testTime "november")
+        (currentTime chronicNowTime)
+        (parserOptions [guess (Guess False)])
+
+    , rangeComparisonCase "3"
+        (actualMin (timeLiteral (fmt "%F %T") "2006-11-01 00:00:00"))
+        (actualMax (timeLiteral (fmt "%F %T") "2006-12-01 00:00:00"))
+        (testTime "weekend")
+        (currentTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:00"))
+        (parserOptions [guess (Guess False)])
+    ]
    
-  def test_parse_span
-    span = parse_now("friday", :guess => false)
-    assert_equal Time.local(2006, 8, 18), span.begin
-    assert_equal Time.local(2006, 8, 19), span.end
-
-    span = parse_now("november", :guess => false)
-    assert_equal Time.local(2006, 11), span.begin
-    assert_equal Time.local(2006, 12), span.end
-
-    span = Chronic.parse("weekend" , :now => @time_2006_08_16_14_00_00, :guess => false)
-    assert_equal Time.local(2006, 8, 19), span.begin
-    assert_equal Time.local(2006, 8, 21), span.end
-  end
-
+{-
   def test_parse_with_endian_precedence
     date = '11/02/2007'
 
