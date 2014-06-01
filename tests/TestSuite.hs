@@ -40,12 +40,12 @@ data CurrentTime = CurrentTime { unCurrentTime :: DT.UTCTime }
 currentTime = CurrentTime
 
 exactComparisonCase name actual time now opts =
-  testCase name $ 
+  testCase name $
         Right (Exact (unActualTime actual)) @=?
         runChronicTest (unCurrentTime now) (parserUnderTestM (unParserOptions opts) (unTestTime time))
 
 rangeComparisonCase name actualMin actualMax time now opts =
-  testCase name $ 
+  testCase name $
         Right (Range (unActualMin actualMin) (unActualMax actualMax)) @=?
         runChronicTest (unCurrentTime now) (parserUnderTestM (unParserOptions opts) (unTestTime time))
 
@@ -55,7 +55,7 @@ monadicNilCase name time now opts =
           Right _ -> assertFailure "unexpectedly parsed"
           _       -> assertBool "" True
 
-    
+
 
 chronicNowTime =  timeLiteral (fmt "%F%T") "2006-8-16:14:00:00"
 
@@ -67,27 +67,27 @@ main = defaultMain
     , testHandleRmnOd
     , testHandleOdRm
     , testHandleOdRmn
-    , testHandleSyRmnOd 
-    , testHandleSdRmn 
-    , testHandleRmnOdOn 
-    , testHandleRmnSy 
-    , testHandleRdnRmnDsTTzSy 
+    , testHandleSyRmnOd
+    , testHandleSdRmn
+    , testHandleRmnOdOn
+    , testHandleRmnSy
+    , testHandleRdnRmnDsTTzSy
     , testHandleSySmSdTTz
-    , testHandleRmnSdSy 
-    , testHandleRmnOdSy 
-    , testHandleOdRmnSy 
-    , testHandleSdRmnSy 
-    , testHandleSmSdSy 
-    , testHandleSdSmSy 
-    , testHandleSySmSd 
-    , testHandleSmSd 
+    , testHandleRmnSdSy
+    , testHandleRmnOdSy
+    , testHandleOdRmnSy
+    , testHandleSdRmnSy
+    , testHandleSmSdSy
+    , testHandleSdSmSy
+    , testHandleSySmSd
+    , testHandleSmSd
     , testHandleSySm
     , testHandleR
-    , testHandleSRPA 
-    , testHandleOrr 
-    , testHandleORSR 
+    , testHandleSRPA
+    , testHandleOrr
+    , testHandleORSR
     , testHandleORGR
-    , testHandleSmRmnSy 
+    , testHandleSmRmnSy
     , testParseGuessR
     , testParseGuessRR
     , testParseGuessRRR
@@ -95,17 +95,19 @@ main = defaultMain
     , testParseGuessGRR
     , testParseGuessGRRR
     , testParseGuessRGR
-    , testParseGuessAAgo  
+    , testParseGuessAAgo
     , testParseGuessSRP
     , testParseGuessPSR
     , testParseGuessSRPA
-    , testParseGuessORGR  
-    , testParseGuessNonsense 
+    , testParseGuessORGR
+    , testParseGuessNonsense
     , testParseSpan
     , testParseWIthEndianPrecedence
+    , testParseWords
+    , testRelativeToAnHourBefore
     ]
 
-{-- In the Chronic source, 
+{-- In the Chronic source,
 - r  <-> repeater
 - s  <-> scalar
 - mn <-> month name
@@ -116,14 +118,14 @@ main = defaultMain
 
 testHandleGeneric :: Test
 testHandleGeneric = testGroup "test_handle_generic"
-    [ testCase "0" $ (\time -> 
+    [ testCase "0" $ (\time ->
         Right (Exact (timeLiteral (fmt "%FT%T") time)) @=? parserUnderTest [] time
       ) "2012-08-02T13:00:00"
 
     , simpleComparisonCase "1" (fmt "%FT%T") [] "2012-08-02T13:00:00"
 
     , simpleComparisonCase "2" (fmt "%FT%T%z") [] "2012-08-02T13:00:00+01:00"
-        
+
     , simpleComparisonCase "3" (fmt "%FT%T%z") [] "2012-08-02T08:00:00-04:00"
 
       {- original case
@@ -426,7 +428,7 @@ testHandleRmnSy = testGroup "test_handle_rmn_sy"
         (parserOptions [ambiguousYearFutureBias 10])
     ]
 
-{- original cases: 
+{- original cases:
 - ...
 - assert_equal ..., time.to_i
 -}
@@ -439,9 +441,9 @@ testHandleRdnRmnDsTTzSy = testGroup "test_handle_rdn_rmn_ds_t_tz_sy"
         (parserOptions [])
     ]
 
-{- original cases: 
+{- original cases:
 - ...
-- assert_equal ..., time.to_i 
+- assert_equal ..., time.to_i
 - for test 1,2,3,4
 -
 - and
@@ -489,7 +491,7 @@ testHandleRmnSdSy = testGroup "test_handle_rmn_sd_sy"
         (testTime   "November 18, 2010")
         (currentTime chronicNowTime)
         (parserOptions [])
-        
+
     , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2010-11-18 12:00:00"))
         (testTime   "November 18, 2010")
@@ -725,7 +727,7 @@ testHandleSdSmSy = testGroup "test_handle_sd_sm_sy"
         (testTime   "27/5/1979")
         (currentTime chronicNowTime)
         (parserOptions [])
-     
+
     , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "1979-05-27 07:00:00"))
         (testTime   "27/5/1979 @ 700")
@@ -954,7 +956,7 @@ testHandleR = testGroup "test_handle_r"
         (testTime   "today at 2:00:00 AM")
         (currentTime chronicNowTime)
         (parserOptions [hours24 False])
-     
+
     , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 03:00:00"))
         (testTime   "today at 3:00:00")
@@ -997,14 +999,14 @@ testHandleOrr = testGroup "test_handle_orr" (
     ]
 
     <>
-    
+
     --TODO: refactor into func
     do {
       month <- zip ["jan", "feb", "march", "april", "may", "june", "july", "aug", "sep"]  [1..9];
       [
-        testCase (show (snd month)) $ 
+        testCase (show (snd month)) $
           Right (snd month) @=? do
-            (Exact time) <- runChronicTest chronicNowTime (parserUnderTestM []  ("5th tuesday in " <> (fst month))) 
+            (Exact time) <- runChronicTest chronicNowTime (parserUnderTestM []  ("5th tuesday in " <> (fst month)))
             let (_, month, _) = (toGregorian . DT.utctDay) time
             return month
       ];
@@ -1015,9 +1017,9 @@ testHandleOrr = testGroup "test_handle_orr" (
     do {
       month <- zip ["oct", "nov", "dec"]  [10..12];
       [
-        testCase (show (snd month)) $ 
+        testCase (show (snd month)) $
           Right (snd month) @=? do
-            (Exact time) <- runChronicTest chronicNowTime (parserUnderTestM []  ("5th tuesday in " <> (fst month))) 
+            (Exact time) <- runChronicTest chronicNowTime (parserUnderTestM []  ("5th tuesday in " <> (fst month)))
             let (_, month, _) = (toGregorian . DT.utctDay) time
             return month
       ];
@@ -1025,7 +1027,7 @@ testHandleOrr = testGroup "test_handle_orr" (
    )
 
 testHandleORSR :: Test
-testHandleORSR = testGroup "test_handle_o_r_s_r" 
+testHandleORSR = testGroup "test_handle_o_r_s_r"
     [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-11-15 12:00:00"))
         (testTime   "3rd wednesday in november")
@@ -1042,9 +1044,9 @@ testHandleORSR = testGroup "test_handle_o_r_s_r"
         (currentTime chronicNowTime)
         (parserOptions [])
     ]
-     
+
 testHandleORGR :: Test
-testHandleORGR = testGroup "test_handle_o_r_g_r" 
+testHandleORGR = testGroup "test_handle_o_r_g_r"
     [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2007-03-01 00:00:00"))
         (testTime   "3rd month next year")
@@ -1052,7 +1054,7 @@ testHandleORGR = testGroup "test_handle_o_r_g_r"
         (parserOptions [guess (Guess False)])
 
     --skip test 2, not relevant
-     
+
     , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-09-21 12:00:00"))
         (testTime   "3rd thursday this september")
@@ -1069,7 +1071,7 @@ testHandleORGR = testGroup "test_handle_o_r_g_r"
     ]
 
 testHandleSmRmnSy :: Test
-testHandleSmRmnSy  = testGroup "test_handle_sm_rmn_sy" 
+testHandleSmRmnSy  = testGroup "test_handle_sm_rmn_sy"
     [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2011-03-30 12:00:00"))
         (testTime   "30-Mar-11")
@@ -1085,7 +1087,7 @@ testHandleSmRmnSy  = testGroup "test_handle_sm_rmn_sy"
     ]
 
 testParseGuessR :: Test
-testParseGuessR  = testGroup "test_parse_guess_r" 
+testParseGuessR  = testGroup "test_parse_guess_r"
     [ exactComparisonCase "1"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-18 12:00:00"))
         (testTime   "friday")
@@ -1268,7 +1270,7 @@ testParseGuessGR  = testGroup "test_parse_guess_gr"
         (testTime   "this year")
         (currentTime chronicNowTime)
         (parserOptions [guess (Guess False)])
-         
+
     , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-01-01 12:00:00"))
         (testTime   "this year")
@@ -1596,7 +1598,7 @@ testParseGuessGRR  = testGroup "test_parse_guess_grr"
         (testTime   "yesterday at 4:00")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 09:00:00"))
         (testTime   "today at 9:00")
@@ -1695,55 +1697,55 @@ testParseGuessGRRR  = testGroup "test_parse_guess_grrr"
         (testTime   "today at 6:00pm")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "2"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 06:00:00"))
         (testTime   "today at 6:00am")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "3"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 18:00:00"))
         (testTime   "this day 1800")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "4"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-15 16:00:00"))
         (testTime   "yesterday at 4:00pm")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "5"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 19:00:00"))
         (testTime   "tomorrow evening at 7")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "6"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-17 05:30:00"))
         (testTime   "tomorrow morning at 5:30")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "7"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 00:01:00"))
         (testTime   "next monday at 12:01 am")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "8"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-21 12:01:00"))
         (testTime   "next monday at 12:01 pm")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "9"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 20:15:00"))
         (testTime   "sunday at 8:15pm")
         (currentTime chronicNowTime)
         (parserOptions [])
-         
+
     , exactComparisonCase "10"
         (actualTime (timeLiteral (fmt "%F %T") "2006-08-13 20:15:00"))
         (testTime   "sunday at 8:15pm")
@@ -1771,7 +1773,7 @@ testParseGuessRGR  = testGroup "test_parse_guess_rgr"
         (currentTime chronicNowTime)
         (parserOptions [])
     ]
-         
+
 
 testParseGuessAAgo :: Test
 testParseGuessAAgo  = testGroup "test_parse_guess_a_ago"
@@ -1799,7 +1801,7 @@ testParseGuessAAgo  = testGroup "test_parse_guess_a_ago"
         (currentTime chronicNowTime)
         (parserOptions [])
     ]
-         
+
 testParseGuessSRP :: Test
 testParseGuessSRP  = testGroup "test_parse_guess_s_r_p"
     [ exactComparisonCase "1"
@@ -1970,7 +1972,7 @@ testParseGuessSRP  = testGroup "test_parse_guess_s_r_p"
         (currentTime chronicNowTime)
         (parserOptions [])
     ]
-         
+
 testParseGuessPSR :: Test
 testParseGuessPSR  = testGroup "test_parse_guess_p_s_r"
     [ exactComparisonCase "1"
@@ -2085,7 +2087,7 @@ testParseSpan = testGroup "test_parse_span"
         (currentTime (timeLiteral (fmt "%F %T") "2006-08-16 14:00:00"))
         (parserOptions [guess (Guess False)])
     ]
-   
+
 testParseWIthEndianPrecedence :: Test
 testParseWIthEndianPrecedence  = testGroup "test_parse_with_endian_precedence"
     [ exactComparisonCase "1"
@@ -2105,6 +2107,58 @@ testParseWIthEndianPrecedence  = testGroup "test_parse_with_endian_precedence"
         (testTime "11/02/2007")
         (currentTime chronicNowTime)
         (parserOptions [endianPrecedence LittleMiddle])
+    ]
+
+testParseWords :: Test
+testParseWords  = testGroup "test_parse_words"
+    [
+    ]
+
+
+
+testRelativeToAnHourBefore :: Test
+testRelativeToAnHourBefore  = testGroup "test_relative_to_an_hour_before"
+    [ exactComparisonCase "1"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:50:00"))
+        (testTime "10 to 2")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , exactComparisonCase "2"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:50:00"))
+        (testTime "10 till 2")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , exactComparisonCase "3"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:50:00"))
+        (testTime "10 prior to 2")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , exactComparisonCase "4"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:50:00"))
+        (testTime "10 before 2")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , exactComparisonCase "5"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:50:00"))
+        (testTime "10 to")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , exactComparisonCase "6"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 13:50:00"))
+        (testTime "10 till")
+        (currentTime chronicNowTime)
+        (parserOptions [])
+
+    , exactComparisonCase "7"
+        (actualTime (timeLiteral (fmt "%F %T") "2006-08-16 15:45:00"))
+        (testTime "quarter to 4")
+        (currentTime chronicNowTime)
+        (parserOptions [])
     ]
 
 {-
